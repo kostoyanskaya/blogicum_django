@@ -2,7 +2,6 @@ from django.shortcuts import get_object_or_404, render
 from django.utils.timezone import now
 
 from .models import Category, Post, User, Comment
-from blog.constants import POSTS_BY_PAGE
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from .forms import PostForm, CommentForm, EditProfileForm
@@ -17,11 +16,11 @@ def filter_posts(post_objects):
         is_published=True,
         pub_date__lt=now(),
         category__is_published=True
-    ).select_related('author', 'location', 'category')
+    ).select_related('author', 'location', 'category').annotate(comment_count=Count('comments'))
 
 
 def index(request):
-    posts = filter_posts(Post.objects)[:POSTS_BY_PAGE]
+    posts = filter_posts(Post.objects).order_by('-pub_date')
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -44,7 +43,7 @@ def category_posts(request, category_slug):
         slug=category_slug,
         is_published=True,
     )
-    posts = filter_posts(category.posts)
+    posts = filter_posts(category.posts).order_by('-pub_date')
     paginator = Paginator(posts, 10)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
@@ -69,74 +68,77 @@ def profile(request, username):
     context = {'profile': user, 'page_obj': page_obj}
     return render(request, 'blog/profile.html', context)
 
+
 @login_required
 def create_post(request, post_id=None):
-    if post_id is not None:
-        instance = get_object_or_404(Post, id=post_id)
+    if request.method == 'POST':
+        form = PostForm(request.POST or None,  files=request.FILES or None)
+        if form.is_valid():
+            post = form.save(commit=False)
+            post.author = request.user
+            form.save()
+            return redirect('blog:profile', request.user)
     else:
-        # Связывать форму с объектом не нужно, установим значение None.
-        instance = None    
-    form = PostForm(request.POST or None,  files=request.FILES or None, instance=instance)
-    if form.is_valid():
-        post = form.save(commit=False)
-        post.author = request.user
-        form.save()
-        return redirect('blog:profile', username=request.user.username)
+        form = PostForm()
     return render(request, 'blog/create.html', {'form': form})
 
+
+@login_required
+def edit_post(request, post_id):
+    post = get_object_or_404(Post, id=post_id)
+    if request.user != post.author:
+        return redirect('blog:post_detail', id=post_id)
+    if request.method == 'POST':
+        form = PostForm(request.POST or None, instance=post)
+        if form.is_valid():
+            form.save()
+            return redirect('blog:post_detail', post_id)
+    else:
+        form = PostForm(instance=post)
+        return render(request, 'blog/create.html', {'form': form})
+
+
 def edit_profile(request):
-    if request.user.is_authenticated:
-        user = request.user
-        if request.method == 'POST':
-            form = EditProfileForm(request.POST, instance=user)
-            if form.is_valid():
-                form.save()
-                return redirect('blog:profile',  username=user.username)
-        else:
-            form = EditProfileForm(instance=user)
-        return render(request, 'blog/user.html', {'form': form})
+    if request.method == 'POST':
+        form = EditProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            return redirect('blog:profile', request.user)
+    else:
+        form = EditProfileForm(instance=request.user)
+    return render(request, 'blog/user.html', {'form': form})
 
 @login_required
 def delete_post(request, post_id):
     instance = get_object_or_404(Post, id=post_id)
-    # В форму передаём только объект модели;
-    # передавать в форму параметры запроса не нужно.
     form = PostForm(instance=instance)
     context = {'form': form}
     if instance.author != request.user:
-        # Здесь может быть как вызов ошибки, так и редирект на нужную страницу.
-        raise PermissionDenied
-    # Если был получен POST-запрос...
+        return redirect('blog:post_detail', post_id)
     if request.method == 'POST':
-        # ...удаляем объект:
+        form = PostForm(request.POST or None, instance=instance)
         instance.delete()
-        # ...и переадресовываем пользователя на страницу со списком записей.
         return redirect('blog:index')
-    # Если был получен GET-запрос — отображаем форму.
+    
     return render(request, 'blog/create.html', context)
 
 @login_required
 def add_comment(request, post_id):
-    # Получаем объект дня рождения или выбрасываем 404 ошибку.
     post = get_object_or_404(Post, id=post_id)
-    # Функция должна обрабатывать только POST-запросы.
     form = CommentForm(request.POST or None)
     if form.is_valid():
-        # Создаём объект поздравления, но не сохраняем его в БД.
         comment = form.save(commit=False)
-        # В поле author передаём объект автора поздравления.
         comment.author = request.user
-        # В поле birthday передаём объект дня рождения.
         comment.post = post
-        # Сохраняем объект в БД.
         comment.save()
-    # Перенаправляем пользователя назад, на страницу дня рождения.
     return redirect('blog:post_detail', id =post_id)
 
 @login_required
 def edit_comment(request, post_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
-    if request.user == comment.author:
+    if request.user != comment.author:
+        return(redirect('blog:post_detail', post_id))
+    if request.method == "POST":
         form = CommentForm(request.POST or None, instance=comment)
         if form.is_valid():
             form.save()
@@ -145,10 +147,13 @@ def edit_comment(request, post_id, comment_id):
         form = CommentForm(instance=comment) 
     return render(request, 'blog/comment.html', {'form': form, 'comment': comment})
     
-
+@login_required
 def delete_comment(request, post_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id)
-    if request.user == comment.author:
+    if request.user != comment.author:
+        return(redirect('blog:post_detail', post_id))
+    if request.method == "POST":
         comment.delete()
-        return redirect('blog:post_detail', id=post_id)
+        return redirect('blog:post_detail', post_id)
+    
     return render(request, 'blog/comment.html', {'comment': comment})

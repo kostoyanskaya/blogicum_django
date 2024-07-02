@@ -1,9 +1,9 @@
 from pathlib import Path
+import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-otu+p5ddfpw)ysk@*o@!d%+-_5+ruqnnd%&@!n4i-8@7c&71#-'
-
+SECRET_KEY = 'django-insecure-3#&p0y=@36f3mtdec&v56el%+gcdi1szr-xt#)k7+x^u-&*%(t'
 DEBUG = True
 
 ALLOWED_HOSTS = [
@@ -11,19 +11,18 @@ ALLOWED_HOSTS = [
     '127.0.0.1',
 ]
 
+
 INSTALLED_APPS = [
-    'blog.apps.BlogConfig',
-    'pages.apps.PagesConfig',
-    'mistake.apps.MistakeConfig',
-    'users.apps.UsersConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'core.apps.CoreConfig',
     'django_bootstrap5',
+    'pages.apps.PagesConfig',
+    'blog.apps.BlogConfig',
+    'core.apps.CoreConfig',
 ]
 
 MIDDLEWARE = [
@@ -36,14 +35,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+INTERNAL_IPS = [
+    '127.0.0.1',
+]
+
 ROOT_URLCONF = 'blogicum.urls'
 
-TEMPLATES_DIRS = BASE_DIR / 'templates'
+TEMPLATES_DIR = BASE_DIR / 'templates'
 
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [TEMPLATES_DIRS],
+        'DIRS': [TEMPLATES_DIR],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -65,6 +68,7 @@ DATABASES = {
     }
 }
 
+
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -80,29 +84,42 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+
+
 LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Almaty'
 
 USE_I18N = True
 
-USE_L10N = False
+USE_L10N = True
 
 USE_TZ = True
 
+
+
 STATIC_URL = '/static/'
 
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'),
+]
+
+
+MEDIA_URL = '/media/'
+
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CSRF_FAILURE_VIEW = 'mistake.views.csrf_failure'
 
 LOGIN_REDIRECT_URL = 'blog:index'
 
 LOGIN_URL = 'login'
 
-MEDIA_ROOT = BASE_DIR / 'media'
+
+CSRF_FAILURE_VIEW = 'pages.views.csrf_failure'
+
 
 EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 
