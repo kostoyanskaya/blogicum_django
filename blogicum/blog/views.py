@@ -55,7 +55,9 @@ def category_posts(request, category_slug):
         {'category': category, 'page_obj': page_obj}
     )
 
+
 def profile(request, username):
+    template = 'blog/profile.html'
     user = get_object_or_404(User, username=username)
     posts_list = (
         user.posts
@@ -66,7 +68,7 @@ def profile(request, username):
     num_pages = request.GET.get('page')
     page_obj = paginator.get_page(num_pages)
     context = {'profile': user, 'page_obj': page_obj}
-    return render(request, 'blog/profile.html', context)
+    return render(request, template, context)
 
 
 @login_required
@@ -87,7 +89,7 @@ def create_post(request, post_id=None):
 def edit_post(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     if request.user != post.author:
-        return redirect('blog:post_detail', id=post_id)
+        return redirect('blog:post_detail', post_id)
     if request.method == 'POST':
         form = PostForm(request.POST or None, instance=post)
         if form.is_valid():
@@ -98,7 +100,9 @@ def edit_post(request, post_id):
         return render(request, 'blog/create.html', {'form': form})
 
 
+@login_required
 def edit_profile(request):
+    template = 'blog/user.html'
     if request.method == 'POST':
         form = EditProfileForm(request.POST, instance=request.user)
         if form.is_valid():
@@ -106,7 +110,8 @@ def edit_profile(request):
             return redirect('blog:profile', request.user)
     else:
         form = EditProfileForm(instance=request.user)
-    return render(request, 'blog/user.html', {'form': form})
+    context = {'form': form}
+    return render(request, template, context)
 
 @login_required
 def delete_post(request, post_id):
