@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import models
+
 from blog.constants import MAX_FIELD_LENGTH, REPRESANTATION_LENGHT
 from core.models import PublishedCreated
 
@@ -89,12 +90,14 @@ class Post(PublishedCreated):
 class Comment(PublishedCreated):
     text = models.TextField('Текст')
     post = models.ForeignKey(
-        Post, 
+        Post,
         on_delete=models.CASCADE,
         related_name='comments',
     )
     created_at = models.DateTimeField(auto_now_add=True)
-    author = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='Автор публикации')
+    author = models.ForeignKey(
+        User, on_delete=models.CASCADE, verbose_name='Автор публикации'
+    )
 
     class Meta:
         ordering = ('created_at',)

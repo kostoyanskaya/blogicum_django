@@ -1,8 +1,7 @@
 from django import forms
 
-from django.core.mail import send_mail
-
 from .models import Post, Comment, User
+
 
 class PostForm(forms.ModelForm):
     class Meta:
@@ -12,8 +11,11 @@ class PostForm(forms.ModelForm):
         exclude = ('author',)
 
         widgets = {
-            'pub_date': forms.DateInput(format='%Y-%m-%d %H:%M', attrs={'type': 'datetime-local'})
+            'pub_date': forms.DateInput(
+                format='%Y-%m-%d %H:%M', attrs={'type': 'datetime-local'}
+            )
         }
+
 
 class EditProfileForm(forms.ModelForm):
     class Meta:
@@ -22,7 +24,6 @@ class EditProfileForm(forms.ModelForm):
 
 
 class CommentForm(forms.ModelForm):
-    
     class Meta:
         model = Comment
         fields = ('text',)

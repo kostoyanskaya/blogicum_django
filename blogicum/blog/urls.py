@@ -1,8 +1,6 @@
-from django.urls import path, include
-
-from django.conf.urls.static import static
+from django.urls import include, path
 from django.conf import settings
-
+from django.conf.urls.static import static
 
 from . import views
 
@@ -24,8 +22,19 @@ urlpatterns = [
     path('posts/create/', views.create_post, name='create_post'),
     path('posts/<int:post_id>/edit/', views.edit_post, name='edit_post'),
     path('posts/<int:post_id>/delete/', views.delete_post, name='delete_post'),
-    path('posts/<int:post_id>/comment/', views.add_comment, name='add_comment'),
-    path('posts/<post_id>/edit_comment/<comment_id>/', views.edit_comment, name='edit_comment'),
-    path('posts/<post_id>/delete_comment/<comment_id>/', views.delete_comment, name='delete_comment'),
+    path(
+        'posts/<int:post_id>/comment/',
+        views.add_comment,
+        name='add_comment'
+    ),
+    path(
+        'posts/<post_id>/edit_comment/<comment_id>/',
+        views.edit_comment,
+        name='edit_comment'
+    ),
+    path(
+        'posts/<post_id>/delete_comment/<comment_id>/',
+        views.delete_comment, name='delete_comment'
+    ),
     path('profile/', include(profile)),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
