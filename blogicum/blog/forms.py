@@ -5,13 +5,10 @@ from .models import Post, Comment, User
 
 class PostForm(forms.ModelForm):
     class Meta:
-        # Указываем модель, на основе которой должна строиться форма.
         model = Post
-        # Указываем, что надо отобразить все поля.
         exclude = ('author',)
-
         widgets = {
-            'pub_date': forms.DateInput(
+            'pub_date': forms.DateTimeInput(
                 format='%Y-%m-%d %H:%M', attrs={'type': 'datetime-local'}
             )
         }
