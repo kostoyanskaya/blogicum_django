@@ -45,7 +45,7 @@ def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     if request.user != post.author:
         post = get_object_or_404(filter_posts(Post.objects), id=post_id)
-    comments = Comment.objects.filter(post_id=post_id).order_by('created_at')
+    comments = Comment.objects.filter(post=post).order_by('created_at')
     return render(request, 'blog/detail.html', {'post': post, 'comments': comments, 'form': CommentForm()})
 
 
