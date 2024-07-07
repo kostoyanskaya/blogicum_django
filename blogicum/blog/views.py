@@ -1,42 +1,15 @@
 from django.db.models import Count
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.decorators import login_required
-from django.utils.timezone import now
-from django.core.paginator import Paginator
 from django.shortcuts import redirect
 
-from blog.constants import COUNT_POSTS
 from .models import Category, Comment, Post, User
 from .forms import CommentForm, EditProfileForm, PostForm
+from .services import annotate_with_comments, filter_by_date, post_paginator
 
-
-def filter_posts(manager=Post.objects, filters=True, annotations=True):
-    test = manager.select_related(
-        'author',
-        'location',
-        'category'
-    )
-    if filters:
-        test = test.filter(
-            is_published=True,
-            pub_date__lt=now(),
-            category__is_published=True
-        )
-    if annotations:
-        test = test.annotate(
-            comment_count=Count('comments')
-    ).order_by(
-        '-pub_date'
-    )
-    return test
-
-def post_paginator(request, item, num=COUNT_POSTS):
-    paginator = Paginator(item, num)
-    page_number = request.GET.get('page')
-    return paginator.get_page(page_number)
 
 def index(request):
-    posts = filter_posts(Post.objects)
+    posts = annotate_with_comments(filter_by_date(Post.objects))
     page_obj = post_paginator(request, posts)
     return render(request, 'blog/index.html', {'page_obj': page_obj})
 
@@ -44,9 +17,11 @@ def index(request):
 def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     if request.user != post.author:
-        post = get_object_or_404(filter_posts(Post.objects), id=post_id)
+        post = get_object_or_404(filter_by_date(Post.objects), id=post_id)
     comments = Comment.objects.filter(post=post).order_by('created_at')
-    return render(request, 'blog/detail.html', {'post': post, 'comments': comments, 'form': CommentForm()})
+    return render(request, 'blog/detail.html', {
+        'post': post, 'comments': comments, 'form': CommentForm()
+    })
 
 
 def category_posts(request, category_slug):
@@ -55,7 +30,9 @@ def category_posts(request, category_slug):
         slug=category_slug,
         is_published=True,
     )
-    posts = filter_posts(category.posts).order_by('-pub_date')
+    posts = annotate_with_comments(
+        filter_by_date(category.posts).order_by('-pub_date')
+    )
     page_obj = post_paginator(request, posts)
     return render(
         request,
@@ -70,7 +47,9 @@ def profile(request, username):
         posts_list = Post.objects.filter(author=request.user).annotate(
             comment_count=Count('comments')).order_by('-pub_date')
     else:
-        posts_list = filter_posts().filter(author=profile)
+        posts_list = annotate_with_comments(
+            filter_by_date().filter(author=profile)
+        )
 
     page_obj = post_paginator(request, posts_list)
     context = {'profile': profile, 'page_obj': page_obj}

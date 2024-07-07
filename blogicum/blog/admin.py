@@ -23,6 +23,7 @@ class Postadmin(admin.ModelAdmin):
     list_filter = ('category', 'is_published',)
     search_fields = ('title', 'text',)
 
+
 @admin.register(Comment)
 class Commentadmin(admin.ModelAdmin):
     list_display = ('text', 'post', 'created_at', 'author',)

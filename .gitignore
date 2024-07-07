@@ -150,3 +150,10 @@ media/
 
 sent_emails/
 
+static/
+
+db.json/
+
+indented_db.json/
+
+

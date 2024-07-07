@@ -1,8 +1,8 @@
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from blog.constants import MAX_FIELD_LENGTH, REPRESANTATION_LENGHT
 from core.models import CreatedAt, PublishedCreated
+from blog.constants import MAX_FIELD_LENGTH, REPRESANTATION_LENGHT
 
 
 User = get_user_model()
@@ -63,6 +63,7 @@ class Post(PublishedCreated):
         on_delete=models.CASCADE,
         verbose_name='Автор публикации',
         related_name='posts',
+        null=True,
     )
     location = models.ForeignKey(
         Location,
@@ -96,7 +97,10 @@ class Comment(CreatedAt):
         verbose_name='Публикация'
     )
     author = models.ForeignKey(
-        User, on_delete=models.CASCADE, verbose_name='Автор комментария', related_name='comments'
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор комментария',
+        related_name='comments'
     )
 
     class Meta:
