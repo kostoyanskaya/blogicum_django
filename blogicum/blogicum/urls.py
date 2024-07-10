@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
 
-from blog.services import RegistrationView
+from blog.views import RegistrationView
 
 
 handler404 = 'pages.views.page_not_found'

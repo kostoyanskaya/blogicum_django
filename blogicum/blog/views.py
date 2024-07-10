@@ -1,10 +1,19 @@
+from django.views.generic import CreateView
 from django.shortcuts import get_object_or_404, render
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import redirect
+from django.urls import reverse_lazy
+from django.contrib.auth.forms import UserCreationForm
 
+from .services import annotate_with_comments, filter_by_date, post_paginator
 from .models import Category, Comment, Post, User
 from .forms import CommentForm, EditProfileForm, PostForm
-from .services import annotate_with_comments, filter_by_date, post_paginator
+
+
+class RegistrationView(CreateView):
+    template_name = 'registration/registration_form.html'
+    form_class = UserCreationForm
+    success_url = reverse_lazy('blog:index')
 
 
 def index(request):
@@ -17,7 +26,7 @@ def post_detail(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     if request.user != post.author:
         post = get_object_or_404(filter_by_date(Post.objects), id=post_id)
-    comments = post.comments.all()
+    comments = post.comments.all().select_related('author',)
     return render(request, 'blog/detail.html', {
         'post': post, 'comments': comments, 'form': CommentForm()
     })
@@ -42,12 +51,11 @@ def category_posts(request, category_slug):
 
 def profile(request, username):
     profile = get_object_or_404(User, username=username)
-    posts_list = profile.posts.all()
+    posts_list = annotate_with_comments(profile.posts.all())
     if not request.user == profile:
         posts_list = filter_by_date(posts_list)
-    posts_list_annotated = annotate_with_comments(posts_list)
 
-    page_obj = post_paginator(request, posts_list_annotated)
+    page_obj = post_paginator(request, posts_list)
     return render(
         request,
         'blog/profile.html',
