@@ -98,4 +98,4 @@ python manage.py runserver
 ```
 
 ## Автор
-#### [_Анастасия Ресницкая_](https://github.com/kostoyanskaya/)
+#### [_Виктория_](https://github.com/kostoyanskaya/)
